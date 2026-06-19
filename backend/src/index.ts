@@ -14,6 +14,6 @@ initDb().then(() => {
   app.listen(PORT, () => {
     console.log(`🚀 Server successfully running at http://localhost:${PORT}`);
   });
-}).catch(err => {
+}).catch((err: unknown) => {
   console.error("❌ Failed to initialize database:", err);
 });

@@ -1,18 +1,16 @@
-import sqlite3 from 'sqlite3';
-import { open } from 'sqlite';
+import Database from 'better-sqlite3';
 import path from 'path';
 
 let dbInstance: any = null;
 
-export async function getDatabase() {
+export function getDatabase() {
   if (dbInstance) return dbInstance;
-  const isProduction = process.env.NODE_ENV === 'production' || process.env.RENDER;
 
-  dbInstance = await open({
-    filename: isProduction ? ':memory:' : path.join(__dirname, '../database.db'),
-    driver: sqlite3.Database
-  });
-  await dbInstance.exec(`
+  const isProduction = process.env.NODE_ENV === 'production' || process.env.RENDER;
+  const dbPath = isProduction ? ':memory:' : path.join(__dirname, '../database.db');
+  
+  dbInstance = new Database(dbPath);
+  dbInstance.exec(`
     CREATE TABLE IF NOT EXISTS applications (
       id TEXT PRIMARY KEY,
       companyName TEXT NOT NULL,
@@ -26,6 +24,7 @@ export async function getDatabase() {
 
   return dbInstance;
 }
-export async function initDb() {
-  return await getDatabase();
+
+export function initDb() {
+  return getDatabase();
 }
