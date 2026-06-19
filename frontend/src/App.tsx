@@ -24,14 +24,14 @@ export default function App() {
   
 
   const fetchApps = async () => {
-    try {
-      const res = await fetch(`http://localhost:4000/api/applications?status=${statusFilter}&search=${search}`);
-      const data = await res.json();
-      setApps(data);
-    } catch (error) {
-      console.error("Error fetching applications:", error);
-    }
-  };
+  try {
+    const res = await fetch(`https://job-tracker-6n7w.onrender.com/api/applications?status=${statusFilter}&search=${search}`);
+    const data = await res.json();
+    setApps(data);
+  } catch (error) {
+    console.error("Error fetching applications:", error);
+  }
+};
   useEffect(() => { fetchApps(); }, [statusFilter, search]);
 
   const handleOpenAdd = () => {
@@ -60,8 +60,8 @@ export default function App() {
     }
 
     const url = editingApp 
-      ? `http://localhost:4000/api/applications/${editingApp.id}` 
-      : `http://localhost:4000/api/applications`;
+      ? `https://job-tracker-6n7w.onrender.com/api/applications/${editingApp.id}` 
+      : `https://job-tracker-6n7w.onrender.com/api/applications`;
     const method = editingApp ? 'PATCH' : 'POST';
 
     try {
@@ -81,13 +81,14 @@ export default function App() {
       alert("Failed to communicate with the server.");
     }
   };
-
-  const handleDelete = async (id: string) => {
-    if (window.confirm("Are you sure you want to delete this job application?")) {
-      await fetch(`http://localhost:4000/api/applications/${id}`, { method: 'DELETE' });
-      fetchApps();
-    }
-  };
+const handleDelete = async (id: string) => {
+  if (window.confirm("Are you sure you want to delete this job application?")) {
+    await fetch(`https://job-tracker-6n7w.onrender.com/api/applications/${id}`, { 
+      method: 'DELETE' 
+    });
+    fetchApps();
+  }
+};
 
   return (
     <div className="min-h-screen bg-gray-50 p-6">
