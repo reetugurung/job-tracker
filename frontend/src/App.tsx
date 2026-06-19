@@ -24,14 +24,21 @@ export default function App() {
   
 
   const fetchApps = async () => {
-  try {
-    const res = await fetch(`https://job-tracker-6n7w.onrender.com/api/applications?status=${statusFilter}&search=${search}`);
-    const data = await res.json();
-    setApps(data);
-  } catch (error) {
-    console.error("Error fetching applications:", error);
-  }
-};
+    try {
+      const res = await fetch(`https://job-tracker-6n7w.onrender.com/api/applications?status=${statusFilter}&search=${search}`);
+      const data = await res.json();
+      if (Array.isArray(data)) {
+        setApps(data);
+      } else {
+        console.error("Backend sent an invalid payload format. Expected Array, got:", data);
+        setApps([]); 
+      }
+    } catch (error) {
+      console.error("Error fetching applications:", error);
+      setApps([]); 
+    }
+  };
+
   useEffect(() => { fetchApps(); }, [statusFilter, search]);
 
   const handleOpenAdd = () => {
@@ -81,14 +88,19 @@ export default function App() {
       alert("Failed to communicate with the server.");
     }
   };
-const handleDelete = async (id: string) => {
-  if (window.confirm("Are you sure you want to delete this job application?")) {
-    await fetch(`https://job-tracker-6n7w.onrender.com/api/applications/${id}`, { 
-      method: 'DELETE' 
-    });
-    fetchApps();
-  }
-};
+
+  const handleDelete = async (id: string) => {
+    if (window.confirm("Are you sure you want to delete this job application?")) {
+      try {
+        await fetch(`https://job-tracker-6n7w.onrender.com/api/applications/${id}`, { 
+          method: 'DELETE' 
+        });
+        fetchApps();
+      } catch (error) {
+        console.error("Error deleting application:", error);
+      }
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gray-50 p-6">
