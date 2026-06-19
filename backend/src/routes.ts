@@ -6,13 +6,15 @@ export const router = Router();
 router.get('/applications', (req: Request, res: Response) => {
   try {
     const db = initDb();
-    const { status, search } = req.query;
+    const statusFilter = req.query.status as string | undefined;
+    const search = req.query.search as string | undefined;
 
     let query = `SELECT * FROM applications WHERE 1=1`;
     const params: any[] = [];
-    if (status && status !== 'All') {
+
+    if (statusFilter && statusFilter !== 'All') {
       query += ` AND status = ?`;
-      params.push(status);
+      params.push(statusFilter);
     }
 
     if (search) {
@@ -21,6 +23,7 @@ router.get('/applications', (req: Request, res: Response) => {
     }
 
     query += ` ORDER BY createdAt DESC`;
+    
     const applications = db.prepare(query).all(params);
     res.json(applications);
   } catch (error) {
@@ -104,6 +107,7 @@ router.delete('/applications/:id', (req: Request, res: Response) => {
   try {
     const db = initDb();
     const result = db.prepare(`DELETE FROM applications WHERE id = ?`).run([req.params.id]);
+    
     if (result.changes === 0) {
       return res.status(404).json({ error: 'Application not found' });
     }
