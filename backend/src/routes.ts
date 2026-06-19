@@ -3,15 +3,14 @@ import { v4 as uuidv4 } from 'uuid';
 import { initDb } from './db';
 
 export const router = Router();
-router.get('/applications', async (req: Request, res: Response) => {
+router.get('/applications', (req: Request, res: Response) => {
   try {
-    const db = await initDb();
+    const db = initDb();
     const { status, search } = req.query;
 
     let query = `SELECT * FROM applications WHERE 1=1`;
     const params: any[] = [];
-
-    if (status) {
+    if (status && status !== 'All') {
       query += ` AND status = ?`;
       params.push(status);
     }
@@ -22,28 +21,30 @@ router.get('/applications', async (req: Request, res: Response) => {
     }
 
     query += ` ORDER BY createdAt DESC`;
-
-    const applications = await db.all(query, params);
+    const applications = db.prepare(query).all(params);
     res.json(applications);
   } catch (error) {
+    console.error("GET /applications error:", error);
     res.status(500).json({ error: 'Failed to retrieve applications' });
   }
 });
-router.get('/applications/:id', async (req: Request, res: Response) => {
+router.get('/applications/:id', (req: Request, res: Response) => {
   try {
-    const db = await initDb();
-    const app = await db.get(`SELECT * FROM applications WHERE id = ?`, [req.params.id]);
+    const db = initDb();
+    const app = db.prepare(`SELECT * FROM applications WHERE id = ?`).get([req.params.id]);
     
     if (!app) return res.status(404).json({ error: 'Application not found' });
     res.json(app);
   } catch (error) {
+    console.error("GET /applications/:id error:", error);
     res.status(500).json({ error: 'Server error' });
   }
 });
-router.post('/applications', async (req: Request, res: Response) => {
+router.post('/applications', (req: Request, res: Response) => {
   try {
-    const db = await initDb();
+    const db = initDb();
     const { companyName, jobTitle, jobType, status, appliedDate, notes } = req.body;
+    
     if (!companyName || companyName.trim().length < 2) {
       return res.status(400).json({ error: 'Company Name is required and must be at least 2 characters' });
     }
@@ -52,24 +53,24 @@ router.post('/applications', async (req: Request, res: Response) => {
     }
 
     const id = uuidv4();
-    await db.run(
+    db.prepare(
       `INSERT INTO applications (id, companyName, jobTitle, jobType, status, appliedDate, notes)
-       VALUES (?, ?, ?, ?, ?, ?, ?)`,
-      [id, companyName.trim(), jobTitle.trim(), jobType, status, appliedDate, notes || '']
-    );
+       VALUES (?, ?, ?, ?, ?, ?, ?)`
+    ).run([id, companyName.trim(), jobTitle.trim(), jobType, status, appliedDate, notes || '']);
 
-    const newApp = await db.get(`SELECT * FROM applications WHERE id = ?`, [id]);
+    const newApp = db.prepare(`SELECT * FROM applications WHERE id = ?`).get([id]);
     res.status(201).json(newApp);
   } catch (error) {
+    console.error("POST /applications error:", error);
     res.status(500).json({ error: 'Failed to create application' });
   }
 });
-router.patch('/applications/:id', async (req: Request, res: Response) => {
+router.patch('/applications/:id', (req: Request, res: Response) => {
   try {
-    const db = await initDb();
+    const db = initDb();
     const { id } = req.params;
     
-    const existing = await db.get(`SELECT * FROM applications WHERE id = ?`, [id]);
+    const existing = db.prepare(`SELECT * FROM applications WHERE id = ?`).get([id]);
     if (!existing) return res.status(404).json({ error: 'Application not found' });
 
     const fields = ['companyName', 'jobTitle', 'jobType', 'status', 'appliedDate', 'notes'];
@@ -90,25 +91,26 @@ router.patch('/applications/:id', async (req: Request, res: Response) => {
     updates.push(`updatedAt = CURRENT_TIMESTAMP`);
     params.push(id); 
 
-    await db.run(`UPDATE applications SET ${updates.join(', ')} WHERE id = ?`, params);
+    db.prepare(`UPDATE applications SET ${updates.join(', ')} WHERE id = ?`).run(params);
     
-    const updatedApp = await db.get(`SELECT * FROM applications WHERE id = ?`, [id]);
+    const updatedApp = db.prepare(`SELECT * FROM applications WHERE id = ?`).get([id]);
     res.json(updatedApp);
   } catch (error) {
+    console.error("PATCH /applications error:", error);
     res.status(500).json({ error: 'Failed to update application' });
   }
 });
-router.delete('/applications/:id', async (req: Request, res: Response) => {
+router.delete('/applications/:id', (req: Request, res: Response) => {
   try {
-    const db = await initDb();
-    const result = await db.run(`DELETE FROM applications WHERE id = ?`, [req.params.id]);
-    
+    const db = initDb();
+    const result = db.prepare(`DELETE FROM applications WHERE id = ?`).run([req.params.id]);
     if (result.changes === 0) {
       return res.status(404).json({ error: 'Application not found' });
     }
     
     res.json({ message: 'Application deleted successfully' });
   } catch (error) {
+    console.error("DELETE /applications error:", error);
     res.status(500).json({ error: 'Failed to delete application' });
   }
 });
