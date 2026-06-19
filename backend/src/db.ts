@@ -8,9 +8,11 @@ export async function initDb() {
   if (dbInstance) return dbInstance;
 
   dbInstance = await open({
-    filename: path.join(__dirname, '../database.db'),
-    driver: sqlite3.Database
-  });
+  filename: process.env.RENDER 
+    ? '/opt/sqlite-data/database.db' 
+    : path.join(__dirname, '../database.db'),
+  driver: sqlite3.Database
+});
   await dbInstance.exec(`
     CREATE TABLE IF NOT EXISTS applications (
       id TEXT PRIMARY KEY,
